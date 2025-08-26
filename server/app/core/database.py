@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Use environment variable with MySQL as the default database system
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "mysql+mysqlconnector://root:password@localhost/qpgen")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:password@localhost/qpgen")
 
 # Create SQLAlchemy engine for MySQL (no SQLite-specific parameters)
 engine = create_engine(SQLALCHEMY_DATABASE_URL)

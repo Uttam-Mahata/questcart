@@ -28,7 +28,6 @@ class OptionModel(BaseModel):
 
 class MCQModel(BaseModel):
     question_text: str
-    explanation: str
     options: List[OptionModel]
 
 class MCQBatchModel(BaseModel):
@@ -36,7 +35,6 @@ class MCQBatchModel(BaseModel):
 
 class MSQModel(BaseModel):
     question_text: str
-    explanation: str
     options: List[OptionModel]
 
 class MSQBatchModel(BaseModel):
@@ -44,7 +42,6 @@ class MSQBatchModel(BaseModel):
 
 class NumericalModel(BaseModel):
     question_text: str
-    explanation: str
     answer: float
 
 class NumericalBatchModel(BaseModel):
@@ -81,14 +78,16 @@ class GeminiService:
             # Get exam name from the relationship
             exam_name = section.exam.name if section.exam else "Exam"
             
-            prompt = f"""Generate {section.total_questions} high-quality multiple-choice questions (MCQs) for a section named "{section.name}" for exam "{exam_name}".
+            prompt = f"""Generate exactly {section.total_questions} high-quality multiple-choice questions (MCQs) for a section named "{section.name}" for exam "{exam_name}".
             
             Requirements:
+            - Generate exactly {section.total_questions} questions (this is critical)
             - Each question must have exactly 4 options
-            - Only one option should be correct
+            - Only one option should be correct per question
             - Questions should be challenging but fair
             - Each question is worth {section.marks_per_question} marks
-            - If applicable, negative marking is {section.negative_marks} marks
+            - Do not include explanations (we'll generate those later)
+            - Focus on creating {section.total_questions} complete questions
             
             Please provide your response in a structured JSON format without any extra text or explanations.
             """
@@ -111,17 +110,29 @@ class GeminiService:
             
             result = response.parsed
             
-            # Convert to our schema
+            # Check if we got enough questions
+            total_received = len(result.questions)
+            logger.info(f"Received {total_received} questions, needed {section.total_questions}")
+            
+            if total_received < section.total_questions:
+                logger.warning(f"Received fewer questions than requested: {total_received} < {section.total_questions}")
+            
+            # Convert to our schema - take exactly the number we need
             questions = []
-            for q in result.questions[:section.total_questions]:  # Ensure we only take the needed number
+            for q in result.questions[:section.total_questions]:  # Take exactly what we need
                 mcq = MCQQuestion(
                     question_text=q.question_text,
-                    explanation=q.explanation,
+                    explanation="",  # Empty explanation for now
                     options=[Option(text=opt.text, is_correct=opt.is_correct) for opt in q.options]
                 )
                 questions.append(mcq)
             
             logger.info(f"Successfully generated {len(questions)} MCQ questions")
+            
+            # If we still don't have enough questions, raise an error
+            if len(questions) < section.total_questions:
+                raise ValueError(f"Failed to generate enough questions. Requested: {section.total_questions}, Generated: {len(questions)}")
+            
             return questions
         except Exception as e:
             logger.error(f"Error generating MCQ questions: {str(e)}")
@@ -133,14 +144,16 @@ class GeminiService:
             # Get exam name from the relationship
             exam_name = section.exam.name if section.exam else "Exam"
             
-            prompt = f"""Generate {section.total_questions} high-quality multiple-select questions (MSQs) for a section named "{section.name}" for exam "{exam_name}".
+            prompt = f"""Generate exactly {section.total_questions} high-quality multiple-select questions (MSQs) for a section named "{section.name}" for exam "{exam_name}".
             
             Requirements:
+            - Generate exactly {section.total_questions} questions (this is critical)
             - Each question must have exactly 4 options
             - Multiple options can be correct (between 1-3 options can be correct)
             - Questions should be challenging but fair
             - Each question is worth {section.marks_per_question} marks
-            - If applicable, negative marking is {section.negative_marks} marks
+            - Do not include explanations (we'll generate those later)
+            - Focus on creating {section.total_questions} complete questions
             
             Please provide your response in a structured JSON format without any extra text or explanations.
             """
@@ -163,17 +176,29 @@ class GeminiService:
             
             result = response.parsed
             
-            # Convert to our schema
+            # Check if we got enough questions
+            total_received = len(result.questions)
+            logger.info(f"Received {total_received} questions, needed {section.total_questions}")
+            
+            if total_received < section.total_questions:
+                logger.warning(f"Received fewer questions than requested: {total_received} < {section.total_questions}")
+            
+            # Convert to our schema - take exactly the number we need
             questions = []
-            for q in result.questions[:section.total_questions]:  # Ensure we only take the needed number
+            for q in result.questions[:section.total_questions]:  # Take exactly what we need
                 msq = MSQQuestion(
                     question_text=q.question_text,
-                    explanation=q.explanation,
+                    explanation="",  # Empty explanation for now
                     options=[Option(text=opt.text, is_correct=opt.is_correct) for opt in q.options]
                 )
                 questions.append(msq)
             
             logger.info(f"Successfully generated {len(questions)} MSQ questions")
+            
+            # If we still don't have enough questions, raise an error
+            if len(questions) < section.total_questions:
+                raise ValueError(f"Failed to generate enough questions. Requested: {section.total_questions}, Generated: {len(questions)}")
+            
             return questions
         except Exception as e:
             logger.error(f"Error generating MSQ questions: {str(e)}")
@@ -185,13 +210,15 @@ class GeminiService:
             # Get exam name from the relationship
             exam_name = section.exam.name if section.exam else "Exam"
             
-            prompt = f"""Generate {section.total_questions} high-quality numerical questions for a section named "{section.name}" for exam "{exam_name}".
+            prompt = f"""Generate exactly {section.total_questions} high-quality numerical questions for a section named "{section.name}" for exam "{exam_name}".
             
             Requirements:
+            - Generate exactly {section.total_questions} questions (this is critical)
             - Each question should have a precise numerical answer
             - Questions should be challenging but fair
             - Each question is worth {section.marks_per_question} marks
-            - If applicable, negative marking is {section.negative_marks} marks
+            - Do not include explanations (we'll generate those later)
+            - Focus on creating {section.total_questions} complete questions
             
             Please provide your response in a structured JSON format without any extra text or explanations.
             """
@@ -214,18 +241,74 @@ class GeminiService:
             
             result = response.parsed
             
-            # Convert to our schema
+            # Check if we got enough questions
+            total_received = len(result.questions)
+            logger.info(f"Received {total_received} questions, needed {section.total_questions}")
+            
+            if total_received < section.total_questions:
+                logger.warning(f"Received fewer questions than requested: {total_received} < {section.total_questions}")
+            
+            # Convert to our schema - take exactly the number we need
             questions = []
-            for q in result.questions[:section.total_questions]:  # Ensure we only take the needed number
+            for q in result.questions[:section.total_questions]:  # Take exactly what we need
                 numerical = NumericalQuestion(
                     question_text=q.question_text,
-                    explanation=q.explanation,
+                    explanation="",  # Empty explanation for now
                     answer=q.answer
                 )
                 questions.append(numerical)
             
             logger.info(f"Successfully generated {len(questions)} numerical questions")
+            
+            # If we still don't have enough questions, raise an error
+            if len(questions) < section.total_questions:
+                raise ValueError(f"Failed to generate enough questions. Requested: {section.total_questions}, Generated: {len(questions)}")
+            
             return questions
         except Exception as e:
             logger.error(f"Error generating numerical questions: {str(e)}")
             raise
+    
+    def generate_explanation(self, question_text: str, question_type: str, correct_answer=None, options=None) -> str:
+        """Generate explanation for a specific question"""
+        try:
+            if question_type in ["MCQ", "MSQ"] and options:
+                correct_options = [opt for opt in options if opt.get('is_correct', False)]
+                correct_texts = [opt['text'] for opt in correct_options]
+                
+                prompt = f"""Generate a clear and concise explanation for this {question_type} question:
+                
+                Question: {question_text}
+                
+                Options: {[opt['text'] for opt in options]}
+                Correct Answer(s): {correct_texts}
+                
+                Please provide a brief explanation of why the correct answer(s) is/are right and why the other options are incorrect.
+                Keep it educational and focused."""
+                
+            elif question_type == "NUM" and correct_answer is not None:
+                prompt = f"""Generate a clear and concise explanation for this numerical question:
+                
+                Question: {question_text}
+                Correct Answer: {correct_answer}
+                
+                Please provide a step-by-step solution showing how to arrive at the correct answer.
+                Keep it educational and focused."""
+            else:
+                return "Explanation not available."
+            
+            logger.info(f"Generating explanation for {question_type} question")
+            
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt
+            )
+            
+            explanation = response.text.strip()
+            logger.info("Successfully generated explanation")
+            
+            return explanation
+            
+        except Exception as e:
+            logger.error(f"Error generating explanation: {str(e)}")
+            return "Explanation could not be generated."
