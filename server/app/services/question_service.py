@@ -6,7 +6,7 @@ import json
 from app.repositories.exam_repository import ExamRepository
 from app.repositories.question_repository import QuestionRepository
 from app.services.gemini_service import GeminiService
-from app.utils.firebase_utils import FirebaseStorageService
+from app.utils.azure_storage_utils import AzureStorageService
 from app.models.models import Section, QuestionType
 from app.schemas.schemas import QuestionUnion, QuestionUpdate
 
@@ -16,7 +16,7 @@ class QuestionService:
         self.exam_repository = ExamRepository()
         self.question_repository = QuestionRepository()
         self.gemini_service = GeminiService()
-        self.firebase_service = FirebaseStorageService()
+        self.azure_storage_service = AzureStorageService()
     
     def generate_questions_for_section(self, db: Session, section_id: int) -> List[QuestionUnion]:
         """Generate questions for a section and save them to the database"""
@@ -79,15 +79,15 @@ class QuestionService:
             raise ValueError("File must be an image")
         
         try:
-            # Upload the image to Firebase Storage
-            image_url = await self.firebase_service.upload_image(
+            # Upload the image to Azure Storage
+            image_url = await self.azure_storage_service.upload_image(
                 file, 
                 folder=f"questions/{question.section_id}"
             )
             
             # If the question already has an image, delete the old one
             if question.image_url:
-                self.firebase_service.delete_image(question.image_url)
+                self.azure_storage_service.delete_image(question.image_url)
             
             # Update the question with the new image URL
             updated_question = self.question_repository.update_question_image(db, question_id, image_url)
@@ -104,8 +104,8 @@ class QuestionService:
             raise ValueError("File must be an image")
         
         try:
-            # Upload the image to Firebase Storage
-            image_url = await self.firebase_service.upload_image(
+            # Upload the image to Azure Storage
+            image_url = await self.azure_storage_service.upload_image(
                 file, 
                 folder=f"options/{section_id}"
             )
