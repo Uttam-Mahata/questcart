@@ -132,6 +132,18 @@ const ExamDetailPage: React.FC = () => {
                 <div>
                   <span className="font-medium">Total Section Marks:</span> {section.questions_to_attempt * section.marks_per_question}
                 </div>
+                {section.topics && (
+                  <div className="mt-2">
+                    <span className="font-medium">Topics:</span>
+                    <p className="whitespace-pre-wrap text-sm text-gray-500">{section.topics}</p>
+                  </div>
+                )}
+                {section.syllabus_file_uri && (
+                  <div className="mt-2">
+                    <span className="font-medium">Syllabus:</span>
+                    <p className="text-sm text-gray-500">{section.syllabus_file_uri}</p>
+                  </div>
+                )}
               </div>
             </div>
             

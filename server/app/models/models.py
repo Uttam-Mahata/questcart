@@ -26,6 +26,8 @@ class Section(Base):
     id = Column(Integer, primary_key=True, index=True)
     exam_id = Column(Integer, ForeignKey("exams.id"))
     name = Column(String(255))  # Added length constraint
+    topics = Column(Text, nullable=True)
+    syllabus_file_uri = Column(String(1024), nullable=True)
     total_questions = Column(Integer)
     questions_to_attempt = Column(Integer)
     marks_per_question = Column(Float)

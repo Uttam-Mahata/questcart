@@ -5,15 +5,17 @@ from typing import List
 from app.core.database import get_db
 from app.schemas.schemas import (
     ExamCreate, ExamResponse, GenerateQuestionsRequest, GeneratedQuestionResponse, 
-    QuestionResponse, QuestionUpdate, ImageUploadResponse
+    QuestionResponse, QuestionUpdate, ImageUploadResponse, SyllabusUploadResponse
 )
 from app.repositories.exam_repository import ExamRepository
 from app.services.question_service import QuestionService
+from app.services.section_service import SectionService
 import json
 
 router = APIRouter(prefix="/api/exams", tags=["exams"])
 exam_repository = ExamRepository()
 question_service = QuestionService()
+section_service = SectionService()
 
 
 @router.post("/", response_model=ExamResponse, status_code=status.HTTP_201_CREATED)
@@ -148,3 +150,21 @@ async def upload_option_image(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sections/{section_id}/upload-syllabus", response_model=SyllabusUploadResponse)
+async def upload_syllabus(
+    section_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """Upload a syllabus PDF for a section"""
+    try:
+        result = await section_service.upload_syllabus(db, section_id, file)
+        return result
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error in upload_syllabus endpoint: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred during syllabus upload.")

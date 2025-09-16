@@ -51,3 +51,12 @@ class ExamRepository:
 
     def get_sections_by_exam(self, db: Session, exam_id: int):
         return db.query(Section).filter(Section.exam_id == exam_id).all()
+
+    def update_section_syllabus(self, db: Session, section_id: int, file_uri: str) -> Section:
+        section = self.get_section(db, section_id)
+        if not section:
+            return None
+        section.syllabus_file_uri = file_uri
+        db.commit()
+        db.refresh(section)
+        return section

@@ -30,7 +30,20 @@ const examService = {
   getSectionQuestions: async (sectionId: number): Promise<any[]> => {
     const response = await api.get(`/api/exams/sections/${sectionId}/questions`);
     return response.data;
-  }
+  },
+
+  // Upload a syllabus for a section
+  uploadSyllabus: async (sectionId: number, file: File): Promise<{ file_uri: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await api.post(`/api/exams/sections/${sectionId}/upload-syllabus`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };
 
 export default examService;

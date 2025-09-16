@@ -18,6 +18,8 @@ export interface Option {
 // Section Creation Type
 export interface SectionCreate {
   name: string;
+  topics?: string;
+  syllabus_file_uri?: string;
   total_questions: number;
   questions_to_attempt: number;
   marks_per_question: number;

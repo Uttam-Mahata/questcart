@@ -11,6 +11,8 @@ class QuestionType(str, Enum):
 # Section Schema for creating exams
 class SectionCreate(BaseModel):
     name: str
+    topics: Optional[str] = None
+    syllabus_file_uri: Optional[str] = None
     total_questions: int
     questions_to_attempt: int
     marks_per_question: float
@@ -108,3 +110,7 @@ class ImageUploadResponse(BaseModel):
 # Schema for question image update
 class QuestionImageUpdate(BaseModel):
     image_url: str
+
+# Schema for syllabus upload response
+class SyllabusUploadResponse(BaseModel):
+    file_uri: str

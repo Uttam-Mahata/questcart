@@ -81,6 +81,7 @@ class GeminiService:
             # Get exam name from the relationship
             exam_name = section.exam.name if section.exam else "Exam"
             
+            # Base prompt
             prompt = f"""Generate {section.total_questions} high-quality multiple-choice questions (MCQs) for a section named "{section.name}" for exam "{exam_name}".
             
             Requirements:
@@ -89,15 +90,35 @@ class GeminiService:
             - Questions should be challenging but fair
             - Each question is worth {section.marks_per_question} marks
             - If applicable, negative marking is {section.negative_marks} marks
-            
-            Please provide your response in a structured JSON format without any extra text or explanations.
             """
+
+            # Initialize contents for Gemini API
+            contents = []
+
+            # Add syllabus if it exists
+            if section.syllabus_file_uri:
+                try:
+                    syllabus_file = self.client.files.get(name=section.syllabus_file_uri)
+                    contents.append(syllabus_file)
+                    prompt += "\n\nPlease generate questions based on the provided syllabus document."
+                except Exception as e:
+                    logger.error(f"Failed to get syllabus file from Gemini: {e}")
+                    # Decide if you want to proceed without the file or raise an error
+                    # For now, let's proceed without it
+
+            # Add topics if they exist
+            if section.topics:
+                prompt += f"\n\nPlease focus on the following topics: {section.topics}."
+
+            prompt += "\n\nPlease provide your response in a structured JSON format without any extra text or explanations."
+
+            contents.append(prompt)
             
             logger.info(f"Sending MCQ prompt to Gemini: {prompt[:100]}...")
             
             response = self.client.models.generate_content(
                 model=self.model,
-                contents=prompt,
+                contents=contents,
                 config={
                     'response_mime_type': 'application/json',
                     'response_schema': MCQBatchModel,
@@ -141,15 +162,33 @@ class GeminiService:
             - Questions should be challenging but fair
             - Each question is worth {section.marks_per_question} marks
             - If applicable, negative marking is {section.negative_marks} marks
-            
-            Please provide your response in a structured JSON format without any extra text or explanations.
             """
+
+            # Initialize contents for Gemini API
+            contents = []
+
+            # Add syllabus if it exists
+            if section.syllabus_file_uri:
+                try:
+                    syllabus_file = self.client.files.get(name=section.syllabus_file_uri)
+                    contents.append(syllabus_file)
+                    prompt += "\n\nPlease generate questions based on the provided syllabus document."
+                except Exception as e:
+                    logger.error(f"Failed to get syllabus file from Gemini: {e}")
+
+            # Add topics if they exist
+            if section.topics:
+                prompt += f"\n\nPlease focus on the following topics: {section.topics}."
+
+            prompt += "\n\nPlease provide your response in a structured JSON format without any extra text or explanations."
+
+            contents.append(prompt)
             
             logger.info(f"Sending MSQ prompt to Gemini: {prompt[:100]}...")
             
             response = self.client.models.generate_content(
                 model=self.model,
-                contents=prompt,
+                contents=contents,
                 config={
                     'response_mime_type': 'application/json',
                     'response_schema': MSQBatchModel,
@@ -192,15 +231,33 @@ class GeminiService:
             - Questions should be challenging but fair
             - Each question is worth {section.marks_per_question} marks
             - If applicable, negative marking is {section.negative_marks} marks
-            
-            Please provide your response in a structured JSON format without any extra text or explanations.
             """
+
+            # Initialize contents for Gemini API
+            contents = []
+
+            # Add syllabus if it exists
+            if section.syllabus_file_uri:
+                try:
+                    syllabus_file = self.client.files.get(name=section.syllabus_file_uri)
+                    contents.append(syllabus_file)
+                    prompt += "\n\nPlease generate questions based on the provided syllabus document."
+                except Exception as e:
+                    logger.error(f"Failed to get syllabus file from Gemini: {e}")
+
+            # Add topics if they exist
+            if section.topics:
+                prompt += f"\n\nPlease focus on the following topics: {section.topics}."
+
+            prompt += "\n\nPlease provide your response in a structured JSON format without any extra text or explanations."
+
+            contents.append(prompt)
             
             logger.info(f"Sending numerical prompt to Gemini: {prompt[:100]}...")
             
             response = self.client.models.generate_content(
                 model=self.model,
-                contents=prompt,
+                contents=contents,
                 config={
                     'response_mime_type': 'application/json',
                     'response_schema': NumericalBatchModel,
